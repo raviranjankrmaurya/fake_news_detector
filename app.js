@@ -1,10 +1,10 @@
 // =============================================
 //   TruthLens — Fake News Detector
-//   app.js — Groq API Integration & UI Logic
+//   app.js — Gemini API Integration & UI Logic
 // =============================================
 
 // ── CONFIG ─────────────────────────────────
-const API_KEY = "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"; // 🔑 Groq API key
+const API_KEY = window.__GROQ_API_KEY__ || ""; // 🔑 Key config.js se aayegi
 const MODEL   = "llama-3.3-70b-versatile"; // Groq ka best free model
 const API_URL = "https://api.groq.com/openai/v1/chat/completions";
 // ───────────────────────────────────────────
@@ -73,7 +73,7 @@ async function handleAnalyze() {
 }
 
 
-// ── Groq API Call ─────────────────────────
+// ── Gemini API Call ─────────────────────────
 async function analyzeArticle(articleText) {
   const systemPrompt = `You are TruthLens, an expert AI fact-checker for students. Analyze news articles for credibility and misinformation.
 
