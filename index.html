@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TruthLens — Fake News Detector for Students</title>
+  <meta name="author" content="Raviranjan" />
+  <meta name="description" content="AI-powered fake news detector for students. Built by Raviranjan." />
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">⬡</span>
+        <span class="logo-text">Truth<span class="accent">Lens</span></span>
+      </div>
+      <nav class="nav">
+        <a href="#how-it-works">How It Works</a>
+        <a href="#detector">Analyze</a>
+        <a href="#history">History</a>
+        <a href="#about">About</a>
+      </nav>
+      <button class="hamburger" id="hamburger" aria-label="Menu">☰</button>
+    </div>
+    <!-- Mobile nav -->
+    <div class="mobile-nav hidden" id="mobileNav">
+      <a href="#how-it-works" onclick="closeMobileNav()">How It Works</a>
+      <a href="#detector"     onclick="closeMobileNav()">Analyze</a>
+      <a href="#history"      onclick="closeMobileNav()">History</a>
+      <a href="#about"        onclick="closeMobileNav()">About</a>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-bg-grid"></div>
+    <div class="hero-content">
+      <div class="hero-badge">AI-Powered · For Students · By Raviranjan</div>
+      <h1 class="hero-title">
+        Don't Let Lies<br />
+        <span class="accent-stroke">Fool You.</span>
+      </h1>
+      <p class="hero-sub">
+        Paste any news article or headline. TruthLens uses advanced AI to assess
+        credibility, detect misinformation patterns, and give you a trustworthy summary — in seconds.
+      </p>
+      <a href="#detector" class="cta-btn">Analyze an Article →</a>
+    </div>
+    <div class="hero-visual">
+      <div class="floating-card card-1">
+        <span class="fc-label FAKE">⚠ LIKELY FAKE</span>
+        <p>"Doctors confirm chocolate cures all diseases"</p>
+      </div>
+      <div class="floating-card card-2">
+        <span class="fc-label REAL">✔ CREDIBLE</span>
+        <p>"WHO releases updated vaccination guidelines for 2026"</p>
+      </div>
+      <div class="floating-card card-3">
+        <span class="fc-label MIXED">~ MIXED</span>
+        <p>"Local politician accused of fund misuse"</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="how-it-works" id="how-it-works">
+    <div class="container">
+      <p class="section-eyebrow">Process</p>
+      <h2 class="section-title">How TruthLens Works</h2>
+      <div class="steps-grid">
+        <div class="step">
+          <div class="step-num">01</div>
+          <div class="step-icon">📋</div>
+          <h3>Paste Article</h3>
+          <p>Paste any news article text, headline, or URL content into the analyzer.</p>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-num">02</div>
+          <div class="step-icon">🤖</div>
+          <h3>AI Analysis</h3>
+          <p>Our AI checks for emotional language, missing sources, logical fallacies, and bias indicators.</p>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-num">03</div>
+          <div class="step-icon">📊</div>
+          <h3>Get Results</h3>
+          <p>Receive a credibility score, verdict, red flags, and a trusted summary of the content.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Detector -->
+  <section class="detector-section" id="detector">
+    <div class="container">
+      <p class="section-eyebrow">Detector</p>
+      <h2 class="section-title">Analyze Any Article</h2>
+      <div class="detector-grid">
+
+        <!-- Input Panel -->
+        <div class="panel input-panel">
+          <div class="panel-header">
+            <span class="panel-dot red"></span>
+            <span class="panel-dot yellow"></span>
+            <span class="panel-dot green"></span>
+            <span class="panel-title">article_input.txt</span>
+          </div>
+          <div class="panel-body">
+            <textarea
+              id="articleInput"
+              class="article-textarea"
+              placeholder="Paste news article, headline, or social media post here...&#10;&#10;Example:&#10;Scientists discover that drinking coffee reverses aging completely, study shows 300% improvement in all patients tested without side effects..."
+            ></textarea>
+            <div class="input-actions">
+              <button class="clear-btn" id="clearBtn">✕ Clear</button>
+              <button class="analyze-btn" id="analyzeBtn">
+                <span id="btnText">⬡ Analyze Now</span>
+                <span id="btnLoader" class="btn-loader hidden">Analyzing...</span>
+              </button>
+            </div>
+            <p class="input-note">⚡ Works best with full article text. Ctrl+Enter to submit.</p>
+          </div>
+        </div>
+
+        <!-- Results Panel -->
+        <div class="panel results-panel" id="resultsPanel">
+          <div class="panel-header">
+            <span class="panel-dot red"></span>
+            <span class="panel-dot yellow"></span>
+            <span class="panel-dot green"></span>
+            <span class="panel-title">analysis_result.json</span>
+          </div>
+          <div class="panel-body" id="resultsBody">
+
+            <!-- Empty state -->
+            <div class="empty-state" id="emptyState">
+              <div class="empty-icon">⬡</div>
+              <p>Paste an article and click<br /><strong>Analyze Now</strong> to see results</p>
+            </div>
+
+            <!-- Results content -->
+            <div class="results-content hidden" id="resultsContent">
+              <div class="verdict-section">
+                <div class="verdict-badge" id="verdictBadge">—</div>
+                <div class="credibility-meter-wrap">
+                  <div class="meter-label">
+                    <span>Credibility Score</span>
+                    <span id="scoreText">0%</span>
+                  </div>
+                  <div class="credibility-meter">
+                    <div class="meter-fill" id="meterFill"></div>
+                  </div>
+                  <div class="meter-scale">
+                    <span>Fake</span><span>Uncertain</span><span>Credible</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="result-block" id="redFlagsBlock">
+                <h4 class="block-title">⚠ Red Flags Detected</h4>
+                <ul class="flags-list" id="flagsList"></ul>
+              </div>
+
+              <div class="result-block">
+                <h4 class="block-title">📄 Trusted Summary</h4>
+                <p class="summary-text" id="summaryText"></p>
+              </div>
+
+              <div class="result-block">
+                <h4 class="block-title">🔍 AI Reasoning</h4>
+                <p class="reasoning-text" id="reasoningText"></p>
+              </div>
+
+              <div class="result-block tips-block">
+                <h4 class="block-title">💡 What You Should Do</h4>
+                <ul class="tips-list" id="tipsList"></ul>
+              </div>
+
+              <!-- Action buttons -->
+              <div class="result-actions">
+                <button class="action-btn share-btn" id="shareBtn">📤 Share Result</button>
+                <button class="action-btn reset-btn" id="resetBtn">← New Article</button>
+              </div>
+            </div>
+
+            <!-- Error state -->
+            <div class="error-state hidden" id="errorState">
+              <div class="error-icon">✕</div>
+              <p id="errorMsg">Something went wrong. Please try again.</p>
+              <button class="reset-btn" id="errorResetBtn">Try Again</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- History Section -->
+  <section class="history-section" id="history">
+    <div class="container">
+      <div class="history-header">
+        <div>
+          <p class="section-eyebrow">History</p>
+          <h2 class="section-title" style="margin-bottom:0">Recent Analyses</h2>
+        </div>
+        <button class="clear-history-btn" id="clearHistoryBtn">🗑 Clear All</button>
+      </div>
+      <div id="historyList" class="history-list">
+        <div class="history-empty" id="historyEmpty">
+          <p>No analyses yet. Paste an article above to get started!</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- About -->
+  <section class="about-section" id="about">
+    <div class="container">
+      <p class="section-eyebrow">About</p>
+      <h2 class="section-title">Why This Matters</h2>
+      <div class="about-grid">
+        <div class="stat-card">
+          <div class="stat-num">78%</div>
+          <p>of students cannot distinguish fake news from real news on social media</p>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">6x</div>
+          <p>faster — misinformation spreads 6× faster than accurate information online</p>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">AI</div>
+          <p>powered analysis that checks emotional manipulation, source patterns & logical fallacies</p>
+        </div>
+      </div>
+      <p class="about-desc">
+        TruthLens is built for students navigating an era of rampant misinformation. It doesn't just label content — it <strong>explains why</strong> something may be unreliable, helping you develop critical media literacy skills over time.
+      </p>
+
+      <!-- Author Card -->
+      <div class="author-card">
+        <div class="author-avatar">RK</div>
+        <div class="author-info">
+          <p class="author-label">Built & Designed by</p>
+          <h3 class="author-name">Raviranjan</h3>
+          <p class="author-desc">Student at GNIOT Institute of Professional Studies · AI/ML & Full-Stack Developer · Fighting misinformation one article at a time.</p>
+          <div class="author-tags">
+            <span>AI/ML</span>
+            <span>Flutter</span>
+            <span>Full-Stack</span>
+            <span>GNIOT IPS</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div>
+          <span class="logo-text">Truth<span class="accent">Lens</span></span>
+          <p>Built for students. Powered by AI. Made to fight misinformation.</p>
+          <p class="footer-note">Educational tool — always cross-verify important news with trusted sources.</p>
+        </div>
+        <div class="footer-author">
+          <p>Designed & Developed by</p>
+          <strong>Raviranjan</strong>
+          <p style="font-size:0.75rem;color:var(--text-dim)">GNIOT Institute of Professional Studies</p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Share Toast -->
+  <div class="toast hidden" id="toast">✔ Result copied to clipboard!</div>
+
+  <script src="app.js"></script>
+</body>
+</html>
