@@ -1,6 +1,4 @@
-# API Keys - NEVER push to GitHub
 config.js
-
 # OS files
 .DS_Store
-Thumbs.dbconfig.js
+Thumbs.db

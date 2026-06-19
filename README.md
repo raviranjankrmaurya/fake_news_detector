@@ -1,6 +1,8 @@
 # ⬡ TruthLens — Fake News Detector for Students
 
-An AI-powered web app that analyzes news articles for credibility, detects misinformation, and helps students develop media literacy skills.
+An AI-powered web app that analyzes news articles for credibility, detects misinformation patterns, and helps students develop media literacy skills.
+
+**Built by Raviranjan** · Student, GNIOT Institute of Professional Studies
 
 ---
 
@@ -8,46 +10,72 @@ An AI-powered web app that analyzes news articles for credibility, detects misin
 
 ```
 fake-news-detector/
-├── index.html    → Main HTML structure & UI
-├── style.css     → Dark investigative theme styling
-├── app.js        → API logic & all interactions
-└── README.md     → This file
+├── index.html          → Main HTML structure & UI
+├── style.css            → Dark investigative theme styling (fully responsive)
+├── app.js                → Frontend logic — history, share, UI rendering
+├── api/
+│   └── analyze.js     → Vercel serverless function (Groq API proxy)
+├── vercel.json          → Vercel routing config
+├── .gitignore            → Keeps secrets out of GitHub
+└── README.md          → This file
 ```
 
 ---
 
-## 🔑 API Key Setup (1 Step Only!)
+## 🤖 How It Works
 
-Open `app.js` and find line 7:
+The app sends article text to a **Vercel serverless function** (`/api/analyze`), which securely calls the **Groq API** (LLaMA 3.3 70B model) using a server-side environment variable. The API key never touches the browser or GitHub — it lives only in Vercel's encrypted environment settings.
 
-```javascript
-const API_KEY = "YOUR_ANTHROPIC_API_KEY_HERE";
 ```
-
-Replace with your actual key:
-
-```javascript
-const API_KEY = "sk-ant-api03-xxxxxxxxxxxxxxxxxxxx";
+Browser (app.js) → /api/analyze (serverless) → Groq API → JSON result → Browser
 ```
-
-That's it! No other changes needed.
 
 ---
 
-## 🚀 How to Run
+## 🚀 Deployment (Vercel)
 
-**Option 1 — Direct Open (Recommended for testing)**
-Just open `index.html` in your browser. That's it.
-
-**Option 2 — VS Code Live Server**
-- Install "Live Server" extension in VS Code
-- Right-click `index.html` → Open with Live Server
-
-**Option 3 — Python server (if Direct Open doesn't work)**
+### 1. Push code to GitHub
 ```bash
-cd fake-news-detector
-python -m http.server 8080
-# Open: http://localhost:8080
+git add .
+git commit -m "deploy"
+git push origin main
+```
+
+### 2. Import to Vercel
+- Go to [vercel.com](https://vercel.com) → **Add New Project**
+- Import your GitHub repo
+- Framework Preset: **Other**
+- Build Command / Output Directory: leave **empty**
+
+### 3. Add Environment Variable
+In Vercel → **Settings → Environment Variables**:
+
+| Name | Value |
+|---|---|
+| `GROQ_API_KEY` | your Groq API key (`gsk_...`) |
+
+### 4. Deploy
+Click **Deploy**. Your live site will be available at:
+```
+https://fakenewsnet.vercel.app
+```
+
+> Get a free Groq API key at [console.groq.com](https://console.groq.com)
+
+---
+
+## 💻 Local Development
+
+Since the API key lives server-side, plain `index.html` won't be able to call `/api/analyze` directly. To test locally with full functionality, use the Vercel CLI:
+
+```bash
+npm install -g vercel
+vercel dev
+```
+
+Then set your local environment variable when prompted, or create a `.env` file:
+```
+GROQ_API_KEY=gsk_xxxxxxxxxxxx
 ```
 
 ---
@@ -56,38 +84,56 @@ python -m http.server 8080
 
 | Feature | Details |
 |---|---|
-| Credibility Score | 0–100 animated meter |
+| Credibility Score | 0–100 animated gauge meter |
 | Verdict | FAKE / CREDIBLE / MIXED / UNCERTAIN |
 | Red Flag Detection | Emotional language, missing sources, fallacies |
 | AI Summary | Neutral summary of what the article claims |
 | AI Reasoning | Why the AI gave this verdict |
-| Student Tips | What to do next (cross-verify, check sources, etc.) |
+| Student Tips | Actionable next steps (cross-verify, check sources) |
+| Analysis History | Saved locally in browser, click to revisit |
+| Share Result | Copies a formatted summary to clipboard |
+| Fully Responsive | Mobile hamburger menu, adapts to all screen sizes |
 
 ---
 
-## 🤖 How the AI Works
+## 🔍 What the AI Checks For
 
-The app sends the article to **Claude (Anthropic API)** with a specialized prompt that checks for:
-- Sensational or emotional language
-- Missing or vague source attribution
+- Emotional or sensational language
+- Missing or vague source attribution ("experts say")
+- Absolute claims without evidence
 - Logical fallacies and impossible statistics
 - Clickbait patterns and conspiracy framing
-- Absolute claims without evidence
 
 ---
 
-## 🔒 Notes
+## 🛠️ Tech Stack
 
-- API key is in the frontend (for demo/student projects only)
-- For production, move API calls to a backend server (Node.js / Flask)
-- Uses `anthropic-dangerous-direct-browser-access: true` header for direct browser API access
-- Works best with full article text (not just headlines)
+- **Frontend**: Vanilla HTML, CSS, JavaScript (no frameworks)
+- **Backend**: Vercel Serverless Functions (Node.js)
+- **AI Model**: LLaMA 3.3 70B Versatile via Groq API
+- **Hosting**: Vercel
+- **Storage**: Browser localStorage (analysis history)
 
 ---
 
-## 👤 Project Info
+## 🔒 Security Notes
 
-- **Project**: Fake News Detector for Students
-- **AI Model**: Claude Sonnet 4.6 (Anthropic)
-- **Tech Stack**: Vanilla HTML + CSS + JavaScript
-- **Purpose**: Media literacy & misinformation detection for students
+- API key is stored **only** in Vercel's environment variables — never in code
+- `config.js` is gitignored and not required for production (Vercel deployment)
+- All API calls are proxied through the serverless function, keeping the key server-side
+
+---
+
+## 👤 Author
+
+**Raviranjan**
+Student, GNIOT Institute of Professional Studies
+AI/ML · Flutter · Full-Stack Development
+
+Built as part of an AICTE AI Internship project (Edunet Foundation × IBM SkillsBuild) to address misinformation among students.
+
+---
+
+## ⚠️ Disclaimer
+
+TruthLens is an educational tool designed to support media literacy. It is not a substitute for professional fact-checking. Always cross-verify important news with trusted, official sources.
