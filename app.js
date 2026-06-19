@@ -1,13 +1,10 @@
 // =============================================
 //   TruthLens — Fake News Detector
-//   app.js — Gemini API Integration & UI Logic
+//   app.js — Vercel Serverless API + UI Logic
+//   Built by Raviranjan
 // =============================================
 
-// ── CONFIG ─────────────────────────────────
-const API_KEY = window.__GROQ_API_KEY__ || ""; // 🔑 Key config.js se aayegi
-const MODEL   = "llama-3.3-70b-versatile"; // Groq ka best free model
-const API_URL = "https://api.groq.com/openai/v1/chat/completions";
-// ───────────────────────────────────────────
+const API_URL = "/api/analyze"; // Vercel serverless function
 
 // ── DOM References ──────────────────────────
 const articleInput   = document.getElementById("articleInput");
@@ -35,14 +32,13 @@ const errorResetBtn  = document.getElementById("errorResetBtn");
 
 
 // ── Event Listeners ─────────────────────────
-// analyzeBtn listener handled by patchedAnalyze below
+analyzeBtn.addEventListener("click", handleAnalyze);
 clearBtn.addEventListener("click", clearInput);
 resetBtn.addEventListener("click", resetToInput);
 errorResetBtn.addEventListener("click", resetToInput);
 
-// Ctrl+Enter to submit
 articleInput.addEventListener("keydown", (e) => {
-  // Ctrl+Enter handled by patchedAnalyze
+  if (e.ctrlKey && e.key === "Enter") handleAnalyze();
 });
 // ───────────────────────────────────────────
 
@@ -53,6 +49,7 @@ async function handleAnalyze() {
 
   if (text.length < 30) {
     showError("Please paste a longer article or text (at least 30 characters) for accurate analysis.");
+    showSection("error");
     return;
   }
 
@@ -62,10 +59,11 @@ async function handleAnalyze() {
   try {
     const result = await analyzeArticle(text);
     renderResults(result);
+    saveToHistory(text, result);
     showSection("results");
   } catch (err) {
     console.error("Analysis error:", err);
-    showError(err.message || "Analysis failed. Please check your API key and internet connection.");
+    showError(err.message || "Analysis failed. Please check your internet connection.");
     showSection("error");
   } finally {
     setLoadingState(false);
@@ -73,76 +71,24 @@ async function handleAnalyze() {
 }
 
 
-// ── Gemini API Call ─────────────────────────
+// ── API Call (Vercel Serverless → Groq) ─────
 async function analyzeArticle(articleText) {
-  const systemPrompt = `You are TruthLens, an expert AI fact-checker for students. Analyze news articles for credibility and misinformation.
-
-IMPORTANT: Respond ONLY with a valid JSON object. No explanation, no markdown, no backticks. Raw JSON only.
-
-Format:
-{
-  "verdict": "FAKE" or "CREDIBLE" or "MIXED" or "UNCERTAIN",
-  "credibility_score": <number 0-100>,
-  "red_flags": ["flag1", "flag2", "flag3"],
-  "summary": "2-3 sentence neutral summary of what the article claims.",
-  "reasoning": "2-3 sentences explaining your verdict.",
-  "tips": ["tip1", "tip2", "tip3"]
-}
-
-Scoring: 0-30 = clearly fake, 31-50 = misleading, 51-70 = mixed, 71-85 = mostly credible, 86-100 = highly credible.`;
-
   const response = await fetch(API_URL, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${API_KEY}`
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      temperature: 0.1,
-      max_tokens: 1024,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user",   content: `Analyze this article and return JSON only:\n\n${articleText}` }
-      ]
-    })
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ articleText })
   });
 
-  if (!response.ok) {
-    const errData = await response.json().catch(() => ({}));
-    const errMsg = errData?.error?.message || `API Error: ${response.status}`;
-    throw new Error(errMsg);
+  const parsed = await response.json().catch(() => ({}));
+
+  if (!response.ok || parsed.error) {
+    throw new Error(parsed.error || `API Error: ${response.status}`);
   }
 
-  const data = await response.json();
-  const rawText = data?.choices?.[0]?.message?.content || "";
-
-  if (!rawText.trim()) {
-    throw new Error("Empty response from Groq. Please try again.");
-  }
-
-  // Clean and extract JSON
-  let cleanText = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();
-  const firstBrace = cleanText.indexOf("{");
-  const lastBrace  = cleanText.lastIndexOf("}");
-  if (firstBrace !== -1 && lastBrace !== -1) {
-    cleanText = cleanText.slice(firstBrace, lastBrace + 1);
-  }
-
-  let parsed;
-  try {
-    parsed = JSON.parse(cleanText);
-  } catch (e) {
-    console.error("Raw response:", rawText);
-    throw new Error("Could not parse AI response. Please try again.");
-  }
-
-  // Validate fields
   const required = ["verdict", "credibility_score", "red_flags", "summary", "reasoning", "tips"];
   for (const field of required) {
     if (!(field in parsed)) {
-      throw new Error(`Missing field "${field}". Please try again.`);
+      throw new Error(`Missing field "${field}" in response. Please try again.`);
     }
   }
 
@@ -155,11 +101,9 @@ function renderResults(data) {
   const { verdict, credibility_score, red_flags, summary, reasoning, tips } = data;
   const score = Math.max(0, Math.min(100, Number(credibility_score)));
 
-  // Verdict badge
   verdictBadge.textContent = formatVerdict(verdict);
   verdictBadge.className = `verdict-badge ${verdict}`;
 
-  // Meter animation
   setTimeout(() => {
     meterFill.style.width = `${score}%`;
     meterFill.style.background = getMeterColor(score);
@@ -167,7 +111,6 @@ function renderResults(data) {
     scoreText.style.color = getMeterColor(score);
   }, 200);
 
-  // Red flags
   flagsList.innerHTML = "";
   if (red_flags && red_flags.length > 0) {
     red_flags.forEach(flag => {
@@ -180,11 +123,9 @@ function renderResults(data) {
     document.getElementById("redFlagsBlock").style.display = "none";
   }
 
-  // Summary & Reasoning
-  summaryText.textContent  = summary   || "No summary available.";
+  summaryText.textContent   = summary   || "No summary available.";
   reasoningText.textContent = reasoning || "No reasoning provided.";
 
-  // Tips
   tipsList.innerHTML = "";
   if (tips && tips.length > 0) {
     tips.forEach(tip => {
@@ -236,7 +177,6 @@ function showSection(section) {
 
 function showError(msg) {
   errorMsg.textContent = msg;
-  showSection("error");
 }
 
 function clearInput() {
@@ -268,15 +208,15 @@ function saveToHistory(articleText, result) {
     id: Date.now(),
     snippet: articleText.slice(0, 120).trim(),
     verdict: result.verdict,
-    score: result.credibility_score,
+    credibility_score: result.credibility_score,
     summary: result.summary,
     reasoning: result.reasoning,
     red_flags: result.red_flags,
     tips: result.tips,
     time: new Date().toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })
   };
-  history.unshift(item); // newest first
-  if (history.length > 20) history.pop(); // max 20 items
+  history.unshift(item);
+  if (history.length > 20) history.pop();
   localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
   renderHistory();
 }
@@ -286,7 +226,6 @@ function renderHistory() {
   const list    = document.getElementById("historyList");
   const empty   = document.getElementById("historyEmpty");
 
-  // Clear old items (keep empty div)
   Array.from(list.querySelectorAll(".history-item")).forEach(el => el.remove());
 
   if (history.length === 0) {
@@ -304,10 +243,9 @@ function renderHistory() {
         <div class="history-snippet">${item.snippet}${item.snippet.length >= 120 ? "…" : ""}</div>
         <div class="history-meta">🕐 ${item.time}</div>
       </div>
-      <span class="history-score" style="color:${getMeterColor(item.score)}">${item.score}%</span>
+      <span class="history-score" style="color:${getMeterColor(item.credibility_score)}">${item.credibility_score}%</span>
       <button class="history-del" data-id="${item.id}" title="Delete">✕</button>
     `;
-    // Click to re-show results
     div.addEventListener("click", (e) => {
       if (e.target.classList.contains("history-del")) return;
       document.getElementById("articleInput").value = item.snippet;
@@ -315,7 +253,6 @@ function renderHistory() {
       showSection("results");
       document.getElementById("detector").scrollIntoView({ behavior: "smooth" });
     });
-    // Delete button
     div.querySelector(".history-del").addEventListener("click", (e) => {
       e.stopPropagation();
       deleteHistoryItem(item.id);
@@ -335,7 +272,6 @@ document.getElementById("clearHistoryBtn").addEventListener("click", () => {
   renderHistory();
 });
 
-// Load history on page load
 renderHistory();
 
 
@@ -355,7 +291,6 @@ function shareResult() {
   navigator.clipboard.writeText(text).then(() => {
     showToast("✔ Result copied to clipboard!");
   }).catch(() => {
-    // Fallback
     const ta = document.createElement("textarea");
     ta.value = text;
     document.body.appendChild(ta);
@@ -379,55 +314,12 @@ function showToast(msg) {
 
 
 // ══════════════════════════════════════════
-//   HAMBURGER MENU
+//   HAMBURGER MENU (mobile nav)
 // ══════════════════════════════════════════
 document.getElementById("hamburger").addEventListener("click", () => {
-  const nav = document.getElementById("mobileNav");
-  nav.classList.toggle("hidden");
+  document.getElementById("mobileNav").classList.toggle("hidden");
 });
 
 function closeMobileNav() {
   document.getElementById("mobileNav").classList.add("hidden");
-}
-
-
-// ══════════════════════════════════════════
-//   PATCH: save to history after analysis
-// ══════════════════════════════════════════
-const _origHandleAnalyze = handleAnalyze;
-// Override handleAnalyze to save history
-(function patchAnalyze() {
-  const origBtn = document.getElementById("analyzeBtn");
-  origBtn.removeEventListener("click", handleAnalyze);
-  origBtn.addEventListener("click", patchedAnalyze);
-
-  document.getElementById("articleInput").removeEventListener("keydown", handleKeydown);
-  document.getElementById("articleInput").addEventListener("keydown", handleKeydown);
-
-  function handleKeydown(e) {
-    if (e.ctrlKey && e.key === "Enter") patchedAnalyze();
-  }
-})();
-
-async function patchedAnalyze() {
-  const text = articleInput.value.trim();
-  if (text.length < 30) {
-    showError("Please paste a longer article or text (at least 30 characters) for accurate analysis.");
-    showSection("error");
-    return;
-  }
-  setLoadingState(true);
-  showSection("loading");
-  try {
-    const result = await analyzeArticle(text);
-    renderResults(result);
-    saveToHistory(text, result);   // ← history mein save karo
-    showSection("results");
-  } catch (err) {
-    console.error("Analysis error:", err);
-    showError(err.message || "Analysis failed. Please check your API key and internet connection.");
-    showSection("error");
-  } finally {
-    setLoadingState(false);
-  }
 }
